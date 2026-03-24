@@ -1,6 +1,32 @@
 # Flutter
 Flutter 學習筆記
 
+## 安裝 Flutter (Windows)
+
+### 使用 Scoop 安裝（推薦）
+
+```bash
+# 1. 安裝 Scoop
+irm get.scoop.sh | iex
+
+# 2. 安裝 Flutter
+scoop install flutter
+
+# 3. 驗證安裝
+flutter doctor
+```
+
+### 其他方式
+
+| 方式 | 命令 |
+|------|------|
+| **winget** | `winget install Google.Flutter` |
+| **Chocolatey** | `choco install flutter -y` |
+| **Git** | `git clone https://github.com/flutter/flutter.git -b stable C:\src\flutter` |
+| **手動** | [下載 ZIP](https://docs.flutter.dev/get-started/install/windows) |
+
+---
+
 ## 專案列表
 
 ### 📝 To Do List
