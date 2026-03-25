@@ -77,32 +77,68 @@ flutter doctor
 
 ### 📝 To Do List
 
-一個簡單的待辦事項管理應用程式。
+一個功能完整的待辦事項管理應用程式。
 
 **位置：** [`todo_list/`](todo_list/)
 
 **功能特色：**
-- ✅ 新增待辦事項
+
+基本功能：
+- ✅ 新增/編輯/刪除待辦事項
 - ✅ 標記完成/未完成
-- ✅ 滑動刪除
+- ✅ 滑動刪除（含確認對話框）
 - ✅ 一鍵清除已完成
-- ✅ 統計顯示
+- ✅ 統計顯示（總數/進行中/已完成/已過期）
+
+進階功能：
+- 🔔 **優先級設定** - 高/中/低優先級，顏色標示
+- 📅 **截止日期** - 設定到期日，自動標示已過期/即將到期
+- 🏷️ **分類標籤** - 為事項分類管理
+- 📝 **詳細描述** - 為事項添加說明
+- 🔍 **搜尋功能** - 快速找到待辦事項
+- 🎯 **篩選功能** - 全部/進行中/已完成/已過期
+- 🔄 **排序功能** - 依時間/優先級/標題排序
+- ↩️ **撤銷刪除** - 刪除後可立即復原
+- 🌙 **深色模式** - 跟隨系統主題自動切換
+- 💾 **資料持久化** - 使用 Hive 本機儲存，關閉 App 不遺失
+
+**技術棧：**
+- **狀態管理：** Provider
+- **資料持久化：** Hive（支援 Web/Android/iOS）
+- **UI 框架：** Material Design 3
+- **國際化：** 繁體中文/英文
 
 **專案結構：**
 ```
 todo_list/lib/
-├── main.dart              # 應用程式入口 (TodoApp)
-├── i18n.dart              # 國際化
+├── main.dart                  # 應用程式入口
+├── i18n.dart                  # 國際化設定
 ├── models/
-│   └── todo.dart          # 資料模型 (Todo)
-└── pages/
-    └── todo_list_page.dart # UI 頁面 (TodoListPage)
+│   ├── todo.dart              # Todo 資料模型
+│   └── todo.g.dart            # Hive Adapter（自動生成）
+├── services/
+│   └── todo_service.dart      # 資料持久化服務層
+├── providers/
+│   └── todo_provider.dart     # Provider 狀態管理
+├── pages/
+│   └── todo_list_page.dart    # 主頁面 UI
+└── widgets/
+    ├── todo_tile.dart         # 列表項目元件
+    ├── todo_form_dialog.dart  # 新增/編輯對話框
+    └── empty_state.dart       # 空狀態元件
 ```
 
 **快速開始：**
 ```bash
 cd todo_list
+flutter pub get
 flutter run
+```
+
+**執行測試：**
+```bash
+cd todo_list
+flutter test
 ```
 
 **APK 下載：**
