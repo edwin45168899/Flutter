@@ -31,10 +31,26 @@ android {
     }
 
     buildTypes {
+        debug {
+            // TODO: Add your own signing config for the debug build.
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    // 自定義 APK 輸出檔名
+    applicationVariants.all {
+        outputs.forEach { output ->
+            val outputImpl = output as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            outputImpl.outputFileName = if (buildType.name == "release") {
+                "todo_list-release.apk"
+            } else {
+                "todo_list-debug.apk"
+            }
         }
     }
 }

@@ -141,11 +141,17 @@ cd todo_list
 flutter test
 ```
 
-**APK 下載：**
+**編譯 APK：**
+```bash
+cd todo_list
+flutter build apk --release
+```
+
+**APK 輸出位置：**
 ```
 todo_list/build/app/outputs/flutter-apk/
-├── app-debug.apk    (開發測試用)
-└── app-release.apk  (發布用)
+├── todo_list-debug.apk      (開發測試用)
+└── todo_list-release.apk    (發布用)
 ```
 
 [詳細說明](todo_list/README.md)
