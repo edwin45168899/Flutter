@@ -27,6 +27,50 @@ flutter doctor
 
 ---
 
+## 安裝 Flutter (macOS)
+
+### 使用 Homebrew 安裝（推薦）
+
+```bash
+# 1. 安裝 Homebrew（如果還沒有）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. 安裝 Flutter
+brew install flutter
+
+# 3. 驗證安裝
+flutter doctor
+```
+
+### 設定 Android SDK（編譯 APK 需要）
+
+```bash
+# 1. 安裝 Android Studio
+brew install --cask android-studio
+
+# 2. 開啟 Android Studio 並完成首次設定
+open -a "Android Studio"
+
+# 3. 在 Android Studio 中安裝 Android SDK Command-line Tools
+#    SDK Manager → SDK Tools → 勾選 "Android SDK Command-line Tools (latest)"
+
+# 4. 設定 SDK 路徑並接受授權
+flutter config --android-sdk ~/Library/Android/sdk
+flutter doctor --android-licenses
+
+# 5. 再次驗證
+flutter doctor
+```
+
+### 其他方式
+
+| 方式 | 命令 |
+|------|------|
+| **Git** | `git clone https://github.com/flutter/flutter.git -b stable ~/flutter` |
+| **手動** | [下載 ZIP](https://docs.flutter.dev/get-started/install/macos) |
+
+---
+
 ## 專案列表
 
 ### 📝 To Do List
