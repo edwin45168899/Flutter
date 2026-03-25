@@ -1,0 +1,12 @@
+# 統一使用 LF 換行符號（推薦用於跨平台專案）
+* text=auto eol=lf
+
+# Dart 檔案
+*.dart text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.lock text eol=lf
+
+# Windows 批次檔保留 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
