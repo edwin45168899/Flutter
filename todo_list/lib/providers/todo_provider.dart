@@ -14,9 +14,16 @@ class TodoProvider extends ChangeNotifier {
   SortOption _sortOption = SortOption.createdAt;
   bool _ascending = false;
   FilterOption _filterOption = FilterOption.all;
+  String? _error; // 錯誤訊息
 
   // 最後刪除的項目（用於撤銷）
   List<Todo> _lastDeletedTodos = [];
+
+  /// 當前使用者 ID
+  String? get currentUserId => _todoService.currentUserId;
+
+  /// 錯誤訊息
+  String? get error => _error;
 
   /// 獲取所有待辦事項
   List<Todo> get todos => _filteredTodos;
@@ -59,13 +66,17 @@ class TodoProvider extends ChangeNotifier {
   /// 初始化
   Future<void> init() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
+      // 確保使用者 ID 已初始化
+      await _todoService.initializeCurrentUser();
       _todos = await _todoService.getAllTodos();
       _applyFiltersAndSort();
     } catch (e) {
-      debugPrint('初始化失敗：$e');
+      _error = e.toString().replaceAll('Exception: ', '');
+      debugPrint('初始化失敗：$_error');
     } finally {
       _isLoading = false;
       notifyListeners();

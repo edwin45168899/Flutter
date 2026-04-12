@@ -30,6 +30,13 @@ class _TodoListPageState extends State<TodoListPage> {
   Widget build(BuildContext context) {
     return Consumer<TodoProvider>(
       builder: (context, todoProvider, child) {
+        // 顯示錯誤 pop up
+        if (todoProvider.error != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showErrorSnackBar(context, todoProvider.error!);
+          });
+        }
+
         if (todoProvider.isLoading) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -499,4 +506,41 @@ class TodoSearchDelegate extends SearchDelegate {
       await provider.updateTodo(updatedTodo);
     }
   }
+}
+
+/// 顯示錯誤訊息 SnackBar
+void _showErrorSnackBar(BuildContext context, String error) {
+  ScaffoldMessenger.of(context).clearSnackBars();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Text('連線錯誤', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            error.length > 100 ? '${error.substring(0, 100)}...' : error,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+      backgroundColor: Theme.of(context).colorScheme.error,
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 5),
+      action: SnackBarAction(
+        label: '重新整理',
+        textColor: Colors.white,
+        onPressed: () {
+          context.read<TodoProvider>().reload();
+        },
+      ),
+    ),
+  );
 }

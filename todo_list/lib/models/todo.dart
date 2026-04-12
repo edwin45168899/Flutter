@@ -8,6 +8,7 @@ enum Priority {
 /// 待辦事項資料模型
 class Todo {
   String id;          // 唯一識別碼
+  String userId;      // 使用者識別碼（多使用者隔離）
   String title;       // 事項標題
   bool isCompleted;   // 是否已完成
   String? description;  // 詳細描述（可選）
@@ -19,6 +20,7 @@ class Todo {
 
   Todo({
     required this.id,
+    required this.userId,
     required this.title,
     this.isCompleted = false,
     this.description,
@@ -49,6 +51,7 @@ class Todo {
   /// 複製並修改
   Todo copyWith({
     String? id,
+    String? userId,
     String? title,
     bool? isCompleted,
     String? description,
@@ -60,6 +63,7 @@ class Todo {
   }) {
     return Todo(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       title: title ?? this.title,
       isCompleted: isCompleted ?? this.isCompleted,
       description: description ?? this.description,
@@ -75,6 +79,7 @@ class Todo {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'title': title,
       'is_completed': isCompleted,
       'description': description,
@@ -90,6 +95,7 @@ class Todo {
   factory Todo.fromJson(Map<String, dynamic> json) {
     return Todo(
       id: json['id'] as String,
+      userId: json['user_id'] as String? ?? '',
       title: json['title'] as String,
       isCompleted: json['is_completed'] as bool? ?? false,
       description: json['description'] as String?,

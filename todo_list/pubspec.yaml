@@ -48,6 +48,9 @@ dependencies:
   uuid: ^4.5.1
   supabase_flutter: ^2.12.2
   shared_preferences: ^2.5.5
+  
+  # 裝置唯一識別碼（跨平台，重裝 App 不變）
+  flutter_udid: ^3.0.0
 
 dev_dependencies:
   flutter_test:

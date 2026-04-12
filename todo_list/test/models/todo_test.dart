@@ -6,6 +6,7 @@ void main() {
     test('建立 Todo 實例', () {
       final todo = Todo(
         id: 'test-1',
+        userId: 'test-user-123',
         title: '測試待辦',
         description: '這是測試描述',
         priority: 2,
@@ -24,6 +25,7 @@ void main() {
     test('copyWith 方法', () {
       final todo = Todo(
         id: 'test-1',
+        userId: 'test-user-123',
         title: '原始標題',
         priority: 1,
       );
@@ -47,6 +49,7 @@ void main() {
       // 已過期
       final overdueTodo = Todo(
         id: 'test-1',
+        userId: 'test-user-123',
         title: '已過期',
         dueDate: yesterday,
         isCompleted: false,
@@ -56,6 +59,7 @@ void main() {
       // 未過期
       final activeTodo = Todo(
         id: 'test-2',
+        userId: 'test-user-123',
         title: '未過期',
         dueDate: tomorrow,
         isCompleted: false,
@@ -65,6 +69,7 @@ void main() {
       // 已完成不算過期
       final completedTodo = Todo(
         id: 'test-3',
+        userId: 'test-user-123',
         title: '已完成',
         dueDate: yesterday,
         isCompleted: true,
@@ -80,6 +85,7 @@ void main() {
       // 即將到期（6 小時內）
       final dueSoonTodo = Todo(
         id: 'test-1',
+        userId: 'test-user-123',
         title: '即將到期',
         dueDate: in6Hours,
         isCompleted: false,
@@ -89,6 +95,7 @@ void main() {
       // 不緊急（2 天後）
       final normalTodo = Todo(
         id: 'test-2',
+        userId: 'test-user-123',
         title: '不緊急',
         dueDate: in2Days,
         isCompleted: false,
@@ -99,6 +106,7 @@ void main() {
     test('toJson 和 fromJson', () {
       final original = Todo(
         id: 'test-1',
+        userId: 'test-user-123',
         title: '測試',
         description: '描述',
         priority: 2,
@@ -118,9 +126,9 @@ void main() {
     });
 
     test('優先級列舉對應', () {
-      final low = Todo(id: '1', title: '低', priority: 0);
-      final medium = Todo(id: '2', title: '中', priority: 1);
-      final high = Todo(id: '3', title: '高', priority: 2);
+      final low = Todo(id: '1', userId: 'test-user', title: '低', priority: 0);
+      final medium = Todo(id: '2', userId: 'test-user', title: '中', priority: 1);
+      final high = Todo(id: '3', userId: 'test-user', title: '高', priority: 2);
 
       expect(low.priorityLevel, Priority.low);
       expect(medium.priorityLevel, Priority.medium);

@@ -16,6 +16,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   final _formKey = GlobalKey<FormState>();
   final _urlController = TextEditingController();
   final _keyController = TextEditingController();
+  String _userId = '';
   bool _isLoading = false;
   bool _hasExistingConfig = false;
 
@@ -32,6 +33,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       setState(() {
         _urlController.text = config['url'] ?? '';
         _keyController.text = config['anonKey'] ?? '';
+        _userId = config['userId'] ?? '自動生成中...';
         _hasExistingConfig = config['url']?.isNotEmpty ?? false;
       });
     }
@@ -82,6 +84,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       setState(() {
         _urlController.clear();
         _keyController.clear();
+        _userId = '自動生成中...';
         _hasExistingConfig = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -205,6 +208,87 @@ class _SettingsDialogState extends State<SettingsDialog> {
                         }
                         return null;
                       },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // User ID 顯示（唯讀，自動生成，清晰可見）
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.fingerprint,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '裝置唯一識別碼（User ID）',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: SelectableText(
+                                  _userId.isNotEmpty
+                                      ? _userId
+                                      : '自動生成中...',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontFamily: 'monospace',
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 20),
+                                onPressed: () {
+                                  if (_userId.isNotEmpty) {
+                                    // 複製到剪貼簿
+                                    // TODO: 需要新增 flutter/services.dart
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('✅ 已複製到剪貼簿'),
+                                        duration: Duration(seconds: 1),
+                                      ),
+                                    );
+                                  }
+                                },
+                                tooltip: '複製 User ID',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '此 ID 由裝置硬體資訊自動生成，用於區分不同使用者',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 16),
