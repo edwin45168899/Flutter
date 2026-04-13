@@ -25,7 +25,7 @@ class SupabaseConfig {
   static Future<String> getUrl() async {
     final prefs = await SharedPreferences.getInstance();
     final url = prefs.getString(_keyUrl) ?? defaultUrl;
-    return url.trim().replaceAll(' ', '');
+    return url.replaceAll(RegExp(r'\s+'), '');
   }
 
   /// 取得 Supabase Anon Key
@@ -70,7 +70,9 @@ class SupabaseConfig {
     required String anonKey,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyUrl, url);
+    // 強制過濾所有空白符號
+    final cleanUrl = url.replaceAll(RegExp(r'\s+'), '');
+    await prefs.setString(_keyUrl, cleanUrl);
     await prefs.setString(_keyAnonKey, anonKey);
     await prefs.setBool(_keyIsConfigured, true);
     
@@ -93,8 +95,9 @@ class SupabaseConfig {
   /// 取得完整設定（用於顯示）
   static Future<Map<String, String>> getConfig() async {
     final prefs = await SharedPreferences.getInstance();
+    final url = prefs.getString(_keyUrl) ?? defaultUrl;
     return {
-      'url': prefs.getString(_keyUrl) ?? defaultUrl,
+      'url': url.replaceAll(RegExp(r'\s+'), ''),
       'anonKey': prefs.getString(_keyAnonKey) ?? defaultAnonKey,
       'userId': prefs.getString(_keyUserId) ?? '',
       'isConfigured': (prefs.getBool(_keyIsConfigured) ?? false).toString(),
