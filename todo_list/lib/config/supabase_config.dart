@@ -69,7 +69,13 @@ class SupabaseConfig {
       return value.toLowerCase();
     }
     // 將非 UUID 的裝置識別字串穩定映射為 UUID v5
-    return _uuid.v5(Uuid.NAMESPACE_URL, value);
+    try {
+      final v5 = _uuid.v5(Uuid.NAMESPACE_URL, value);
+      if (isValidUuid(v5)) return v5;
+    } catch (_) {
+      // v5 生成失敗時降級為 v4
+    }
+    return _uuid.v4();
   }
 
   /// 取得使用者 ID（優先使用裝置 UDID，若已快取則直接回傳）
@@ -81,16 +87,19 @@ class SupabaseConfig {
     if (userId == null || userId.isEmpty) {
       userId = await getDeviceUdid();
       await prefs.setString(_keyUserId, userId);
-      return userId;
+    } else {
+      // 相容舊版：若快取不是 UUID，立即遷移為合法 UUID
+      userId = normalizeUserId(userId);
+      await prefs.setString(_keyUserId, userId);
     }
 
-    // 相容舊版：若快取不是 UUID，立即遷移為合法 UUID
-    final normalized = normalizeUserId(userId);
-    if (normalized != userId) {
-      await prefs.setString(_keyUserId, normalized);
+    // 最終安全保障：確保無論任何情況都回傳合法 UUID
+    if (!isValidUuid(userId)) {
+      userId = _uuid.v4();
+      await prefs.setString(_keyUserId, userId);
     }
 
-    return normalized;
+    return userId;
   }
 
   /// 儲存設定
