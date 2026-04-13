@@ -1,6 +1,8 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'i18n.dart';
 import 'pages/todo_list_page.dart';
 import 'providers/todo_provider.dart';
@@ -8,12 +10,64 @@ import 'config/supabase_config.dart';
 import 'widgets/settings_dialog.dart';
 import 'services/supabase_todo_service.dart';
 
+Future<void> _runSupabaseStartupDiagnostics({
+  required String url,
+  required String anonKey,
+}) async {
+  final normalizedUrl = SupabaseConfig.normalizeUrl(url);
+  final uri = Uri.tryParse(normalizedUrl);
+
+  debugPrint('[Supabase 診斷] rawUrl="$url"');
+  debugPrint('[Supabase 診斷] normalizedUrl="$normalizedUrl"');
+  debugPrint('[Supabase 診斷] anonKeyLength=${anonKey.length}');
+
+  if (uri == null) {
+    debugPrint('[Supabase 診斷] URL 解析失敗');
+    return;
+  }
+
+  debugPrint('[Supabase 診斷] scheme=${uri.scheme}');
+  debugPrint('[Supabase 診斷] host=${uri.host}');
+  debugPrint('[Supabase 診斷] path=${uri.path}');
+}
+
+Future<void> _runSupabaseHealthCheck() async {
+  try {
+    final response = await Supabase.instance.client
+        .from('todos')
+        .select('id')
+        .limit(1);
+    debugPrint('[Supabase 診斷] health check 成功，rows=${(response as List).length}');
+  } catch (e, stackTrace) {
+    debugPrint('[Supabase 診斷] health check 失敗：$e');
+    debugPrint('[Supabase 診斷] stackTrace: $stackTrace');
+  }
+}
+
+Future<String> _buildStartupErrorDetails(Object error) async {
+  final url = await SupabaseConfig.getUrl();
+  final anonKey = await SupabaseConfig.getAnonKey() ?? '';
+  final uri = Uri.tryParse(url);
+
+  final scheme = uri?.scheme.isNotEmpty == true ? uri!.scheme : '(empty)';
+  final host = uri?.host.isNotEmpty == true ? uri!.host : '(empty)';
+
+  return [
+    '啟動初始化失敗：$error',
+    'URL：$url',
+    'scheme：$scheme',
+    'host：$host',
+    'anonKey 長度：${anonKey.length}',
+  ].join('\n');
+}
+
 /// 應用程式入口函式
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 檢查是否已有 Anon Key
   final hasKey = await SupabaseConfig.hasAnonKey();
+  String? startupError;
 
   if (hasKey) {
     // 已有設定：初始化 Supabase
@@ -21,10 +75,16 @@ void main() async {
     final anonKey = await SupabaseConfig.getAnonKey();
 
     if (anonKey != null && anonKey.isNotEmpty) {
-      await SupabaseTodoService.initialize(
-        url: url,
-        anonKey: anonKey,
-      );
+      try {
+        await _runSupabaseStartupDiagnostics(url: url, anonKey: anonKey);
+        await SupabaseTodoService.initialize(
+          url: url,
+          anonKey: anonKey,
+        );
+        await _runSupabaseHealthCheck();
+      } catch (e) {
+        startupError = await _buildStartupErrorDetails(e);
+      }
     }
   }
 
@@ -34,7 +94,7 @@ void main() async {
     await todoProvider.init();
   }
 
-  runApp(TodoApp(isConfigured: hasKey));
+  runApp(TodoApp(isConfigured: hasKey, startupError: startupError));
 }
 
 /// 全域 Navigator Key（用於在任意位置取得 context）
@@ -43,8 +103,9 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// 待辦事項應用程式主體
 class TodoApp extends StatefulWidget {
   final bool isConfigured;
+  final String? startupError;
 
-  const TodoApp({super.key, required this.isConfigured});
+  const TodoApp({super.key, required this.isConfigured, this.startupError});
 
   @override
   State<TodoApp> createState() => _TodoAppState();
@@ -55,11 +116,34 @@ class _TodoAppState extends State<TodoApp> {
   late TodoProvider _todoProvider;
   String? _connectionError;
 
+  Future<String> _buildConnectionDiagnostics(Object error) async {
+    final url = await SupabaseConfig.getUrl();
+    final anonKey = await SupabaseConfig.getAnonKey() ?? '';
+    final uri = Uri.tryParse(url);
+
+    final scheme = uri?.scheme.isNotEmpty == true ? uri!.scheme : '(empty)';
+    final host = uri?.host.isNotEmpty == true ? uri!.host : '(empty)';
+
+    return [
+      '錯誤：$error',
+      'URL：$url',
+      'scheme：$scheme',
+      'host：$host',
+      'anonKey 長度：${anonKey.length}',
+    ].join('\n');
+  }
+
   @override
   void initState() {
     super.initState();
     _hasKey = widget.isConfigured;
     _todoProvider = TodoProvider();
+    if (widget.startupError != null && widget.startupError!.isNotEmpty) {
+      _connectionError = widget.startupError;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showConnectionErrorDialog();
+      });
+    }
     if (_hasKey) {
       _initProvider();
     }
@@ -70,9 +154,10 @@ class _TodoAppState extends State<TodoApp> {
     try {
       await _todoProvider.init();
     } catch (e) {
+      final diagnostic = await _buildConnectionDiagnostics(e);
       if (mounted) {
         setState(() {
-          _connectionError = e.toString().replaceAll('Exception: ', '');
+          _connectionError = diagnostic;
         });
         _showConnectionErrorDialog();
       }
@@ -155,10 +240,12 @@ class _TodoAppState extends State<TodoApp> {
 
     if (anonKey != null && anonKey.isNotEmpty) {
       try {
+        await _runSupabaseStartupDiagnostics(url: url, anonKey: anonKey);
         await SupabaseTodoService.initialize(
           url: url,
           anonKey: anonKey,
         );
+        await _runSupabaseHealthCheck();
 
         if (mounted) {
           setState(() {
@@ -168,9 +255,10 @@ class _TodoAppState extends State<TodoApp> {
           await _todoProvider.init();
         }
       } catch (e) {
+        final diagnostic = await _buildConnectionDiagnostics(e);
         if (mounted) {
           setState(() {
-            _connectionError = e.toString().replaceAll('Exception: ', '');
+            _connectionError = diagnostic;
           });
           _showConnectionErrorDialog();
         }
