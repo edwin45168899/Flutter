@@ -38,7 +38,11 @@ class SupabaseTodoService {
     if (_currentUserId == null) {
       await initializeCurrentUser();
     }
-    return _currentUserId!;
+    final userId = _currentUserId!;
+    if (!SupabaseConfig.isValidUuid(userId)) {
+      throw Exception('user_id 非法，必須為 UUID：$userId');
+    }
+    return userId;
   }
 
   /// 獲取所有待辦事項（僅限當前使用者）

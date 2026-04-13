@@ -43,20 +43,53 @@ Future<void> _runSupabaseHealthCheck() async {
   }
 }
 
-Future<String> _buildStartupErrorDetails(Object error) async {
+String _classifySupabaseError(String rawError) {
+  final e = rawError.toLowerCase();
+  if (e.contains('failed host lookup') || e.contains('socketexception')) {
+    return 'DNS/網路層錯誤：裝置目前無法解析 Supabase 網域';
+  }
+  if (e.contains('invalid api key') || e.contains('jwt') || e.contains('401') || e.contains('403')) {
+    return '授權錯誤：Anon Key 不正確或已失效';
+  }
+  if (e.contains('22p02') || e.contains('invalid input syntax for type uuid')) {
+    return '資料格式錯誤：user_id 不是合法 UUID';
+  }
+  return '未知錯誤：請依下方診斷欄位進一步排查';
+}
+
+String _buildActionHint(String rawError) {
+  final e = rawError.toLowerCase();
+  if (e.contains('failed host lookup') || e.contains('socketexception')) {
+    return '建議：先用手機瀏覽器開啟 https://omareqsfkeqslywwvkyg.supabase.co/rest/v1/ 測試 DNS。';
+  }
+  if (e.contains('401') || e.contains('403') || e.contains('jwt') || e.contains('invalid api key')) {
+    return '建議：到 Supabase Dashboard 重新複製 Anon Key 後再測試。';
+  }
+  if (e.contains('22p02') || e.contains('uuid')) {
+    return '建議：清除 App 設定或重裝 App，讓 user_id 重新產生為 UUID。';
+  }
+  return '建議：保留本彈窗內容並回報。';
+}
+
+Future<String> _buildSupabaseErrorDetails(Object error, {String context = '連線失敗'}) async {
   final url = await SupabaseConfig.getUrl();
   final anonKey = await SupabaseConfig.getAnonKey() ?? '';
   final uri = Uri.tryParse(url);
 
   final scheme = uri?.scheme.isNotEmpty == true ? uri!.scheme : '(empty)';
   final host = uri?.host.isNotEmpty == true ? uri!.host : '(empty)';
+  final rawError = error.toString();
 
   return [
-    '啟動初始化失敗：$error',
+    '$context',
+    '判斷：${_classifySupabaseError(rawError)}',
+    '建議：${_buildActionHint(rawError)}',
+    '原始錯誤：$rawError',
     'URL：$url',
     'scheme：$scheme',
     'host：$host',
     'anonKey 長度：${anonKey.length}',
+    '提示：host 欄位只會顯示純網域，不會包含 https://',
   ].join('\n');
 }
 
@@ -82,7 +115,7 @@ void main() async {
         );
         await _runSupabaseHealthCheck();
       } catch (e) {
-        startupError = await _buildStartupErrorDetails(e);
+        startupError = await _buildSupabaseErrorDetails(e, context: '啟動初始化失敗');
       }
     }
   }
@@ -116,20 +149,7 @@ class _TodoAppState extends State<TodoApp> {
   String? _connectionError;
 
   Future<String> _buildConnectionDiagnostics(Object error) async {
-    final url = await SupabaseConfig.getUrl();
-    final anonKey = await SupabaseConfig.getAnonKey() ?? '';
-    final uri = Uri.tryParse(url);
-
-    final scheme = uri?.scheme.isNotEmpty == true ? uri!.scheme : '(empty)';
-    final host = uri?.host.isNotEmpty == true ? uri!.host : '(empty)';
-
-    return [
-      '錯誤：$error',
-      'URL：$url',
-      'scheme：$scheme',
-      'host：$host',
-      'anonKey 長度：${anonKey.length}',
-    ].join('\n');
+    return _buildSupabaseErrorDetails(error, context: '連線失敗');
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_udid/flutter_udid.dart';
+import 'package:uuid/uuid.dart';
 
 /// Supabase 設定管理器
 /// 使用 SharedPreferences 儲存使用者的 Supabase 連線設定
@@ -14,6 +15,17 @@ class SupabaseConfig {
   static const String _keyAnonKey = 'supabase_anon_key';
   static const String _keyUserId = 'supabase_user_id';
   static const String _keyIsConfigured = 'supabase_is_configured';
+  static const Uuid _uuid = Uuid();
+
+  static final RegExp _uuidRegex = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+  );
+
+  /// 檢查字串是否為合法 UUID
+  static bool isValidUuid(String? value) {
+    if (value == null) return false;
+    return _uuidRegex.hasMatch(value.trim());
+  }
 
   /// 正規化 Supabase URL（去空白、移除尾端斜線）
   static String normalizeUrl(String input) {
@@ -43,29 +55,42 @@ class SupabaseConfig {
   static Future<String> getDeviceUdid() async {
     try {
       final udid = await FlutterUdid.udid;
-      return udid;
+      return normalizeUserId(udid);
     } catch (e) {
-      // 若取得失敗（如 Web 平台不支援），生成一個真正的 UUID v4
-      final bytes = List<int>.generate(16, (i) => DateTime.now().microsecond);
-      bytes[6] = (bytes[6] & 0x0F) | 0x40; // Version 4
-      bytes[8] = (bytes[8] & 0x3F) | 0x80; // Variant 1
-      final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-      return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}';
+      // 若取得失敗（如 Web 平台不支援），生成 UUID v4
+      return _uuid.v4();
     }
+  }
+
+  /// 將任意裝置識別字串正規化為合法 UUID
+  static String normalizeUserId(String raw) {
+    final value = raw.trim();
+    if (isValidUuid(value)) {
+      return value.toLowerCase();
+    }
+    // 將非 UUID 的裝置識別字串穩定映射為 UUID v5
+    return _uuid.v5(Uuid.NAMESPACE_URL, value);
   }
 
   /// 取得使用者 ID（優先使用裝置 UDID，若已快取則直接回傳）
   static Future<String> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     var userId = prefs.getString(_keyUserId);
-    
+
     // 若無快取，從裝置 UDID 取得
     if (userId == null || userId.isEmpty) {
       userId = await getDeviceUdid();
       await prefs.setString(_keyUserId, userId);
+      return userId;
     }
-    
-    return userId;
+
+    // 相容舊版：若快取不是 UUID，立即遷移為合法 UUID
+    final normalized = normalizeUserId(userId);
+    if (normalized != userId) {
+      await prefs.setString(_keyUserId, normalized);
+    }
+
+    return normalized;
   }
 
   /// 儲存設定

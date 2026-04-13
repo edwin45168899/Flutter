@@ -156,3 +156,169 @@ dart run build_runner build --delete-conflicting-outputs
 ## 📄 License
 
 MIT License
+
+## Supabase 與 Android USB 實機除錯紀錄（2026-04）
+
+### 本次問題根因總結
+
+1. **`user_id` 型別不符**
+- 錯誤訊息：`invalid input syntax for type uuid`（`22P02`）
+- 原因：Supabase `todos.user_id` 欄位是 `UUID`，但 App 一開始送出的是裝置字串（例如：`e856b2e85ccb97ee`）
+- 修正：在程式內將裝置 ID 正規化為合法 UUID（非 UUID 轉為穩定 UUID v5），並自動遷移舊快取值
+
+2. **錯誤解讀誤會（`host` 不含 `https://`）**
+- 看到 `Failed host lookup: omareqsfkeqslywwvkyg.supabase.co` 屬正常格式
+- `host` 本來就只顯示網域，不會帶 `https://`
+- 是否有 `https://` 應看完整 `URL` 欄位與 `scheme` 欄位
+
+3. **Android 編譯端 Kotlin Daemon 快取鎖定**
+- 典型現象：`Daemon compilation failed` / `Could not close incremental caches`
+- 原因：Windows 下增量快取檔案被鎖住
+- 修正：清理 `build/.dart_tool/android/.gradle`、停用 Kotlin daemon/incremental 後重建
+
+---
+
+### 手機如何開啟 USB 偵錯模式（Android）
+
+1. 開啟「開發者選項」
+- 設定 → 關於手機 → 連點「版本號碼（Build number）」7 次
+- 看到「你現在是開發人員」即成功
+
+2. 開啟「USB 偵錯」
+- 設定 → 系統（或其他設定）→ 開發者選項 → 打開 `USB 偵錯`
+
+3. 連接 USB 後允許授權
+- 手機跳出「允許 USB 偵錯？」時按「允許」
+- 建議勾選「一律允許這台電腦」
+
+4. USB 連線模式切換為 `檔案傳輸 (MTP)`
+- 不要使用「僅充電」
+
+---
+
+### 常用指令（Windows / PowerShell）
+
+```powershell
+# 進入專案
+cd D:\github\chiisen\Flutter\todo_list
+
+# 檢查 Flutter 與 Android 依賴
+flutter doctor -v
+
+# 啟動 adb 並檢查裝置
+adb kill-server
+adb start-server
+adb devices
+
+# 查看 Flutter 可見裝置
+flutter devices
+
+# 以指定裝置執行（<deviceId> 由 flutter devices 取得）
+flutter run -d <deviceId>
+```
+
+---
+
+### 怎麼找裝置 ID（`deviceId`）
+
+1. 執行：
+
+```powershell
+flutter devices
+```
+
+2. 範例輸出：
+
+```text
+SM S918N (mobile) • R3CW123456A • android-arm64
+```
+
+3. 中間欄位就是裝置 ID，例如：
+- `R3CW123456A`
+
+4. 執行指定裝置：
+
+```powershell
+flutter run -d R3CW123456A
+```
+
+---
+
+### 常見錯誤對照表
+
+1. `Failed host lookup` / `SocketException`
+- 類型：DNS/網路層
+- 先檢查：手機網路、VPN、防火牆、公司網路限制
+- 快速測試：手機瀏覽器開 `https://omareqsfkeqslywwvkyg.supabase.co/rest/v1/`
+
+2. `401` / `403` / `Invalid API key` / `JWT`
+- 類型：授權
+- 先檢查：Supabase Anon Key 是否正確、是否過期或貼錯專案
+
+3. `22P02 invalid input syntax for type uuid`
+- 類型：資料格式
+- 先檢查：`user_id` 是否為合法 UUID
+- 若是舊版快取，清除 App 設定或重裝 App
+
+4. `Daemon compilation failed` / `Could not close incremental caches`
+- 類型：Android/Kotlin 建置快取鎖定
+- 修復：完整清理快取再重建（見下節）
+
+---
+
+### Android 建置快取鎖定修復步驟
+
+```powershell
+cd D:\github\chiisen\Flutter\todo_list
+
+# 關閉可能佔用檔案的程序（先關 Android Studio）
+taskkill /F /IM java.exe
+taskkill /F /IM adb.exe
+
+# 清理快取
+Remove-Item -Recurse -Force .\build -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force .\.dart_tool -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force .\android\.gradle -ErrorAction SilentlyContinue
+
+# 重新抓依賴並執行
+flutter clean
+flutter pub get
+flutter run
+```
+
+---
+
+### 本專案 Supabase 固定設定
+
+- Supabase URL 固定為：
+  - `https://omareqsfkeqslywwvkyg.supabase.co`
+- 設定畫面中的 URL 為唯讀，避免誤改
+- 只需輸入正確的 `Anon Key`
+
+### 為什麼要用這三步測試（`flutter clean` / `flutter pub get` / `flutter run`）
+
+當你在排查「修過但還是報錯」時，這三步是最小且有效的驗證流程：
+
+1. `flutter clean`
+- 目的：清掉舊的編譯產物與快取
+- 原因：避免誤跑到舊版程式（本次曾遇到 Kotlin/Gradle cache 鎖定）
+
+2. `flutter pub get`
+- 目的：重新同步依賴
+- 原因：確保目前程式實際使用到的套件版本與 `pubspec.yaml` 一致
+
+3. `flutter run`
+- 目的：以「全新編譯」直接在裝置驗證
+- 原因：可確認最新修正是否真的生效，而不是 hot reload 的殘留狀態
+
+建議指令：
+
+```powershell
+cd D:\github\chiisen\Flutter\todo_list
+flutter clean
+flutter pub get
+flutter run
+```
+
+補充：
+- 若只做 hot reload/hot restart，初始化流程與快取有機會未完全重建，測試結果可能失真。
