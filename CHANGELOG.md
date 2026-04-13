@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-04-13
+
 ### Added
+- **todo_list**: 在設定對話框中加入 Anon Key 的顯示/隱藏切換功能（使用 * 遮罩）。
 - 初始化專案結構。
 - 新增 `README.md` 包含安裝指南與專案說明。
 - 建立 `todo_list` 範例專案。
@@ -20,4 +23,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **todo_list**: 移除 `SettingsDialog` 中多餘的 API 金鑰取得說明文字。
 
 ### Fixed
+- 修復 Supabase URL 可能包含空白導致連線失敗的問題（SocketFailed host lookup）。
 - 修復 Flutter SDK 路徑問題 (scoop shims)。

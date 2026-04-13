@@ -6,6 +6,9 @@ import 'package:flutter_udid/flutter_udid.dart';
 class SupabaseConfig {
   /// 預設 Supabase URL（Demo 用）
   static const String defaultUrl = 'https://omareqsfkeqslywwvkyg.supabase.co';
+  
+  /// 預設 Supabase Anon Key（必須由使用者輸入，預設為空）
+  static const String defaultAnonKey = '';
 
   static const String _keyUrl = 'supabase_url';
   static const String _keyAnonKey = 'supabase_anon_key';
@@ -21,13 +24,14 @@ class SupabaseConfig {
   /// 取得 Supabase URL（若無則回傳預設值）
   static Future<String> getUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyUrl) ?? defaultUrl;
+    final url = prefs.getString(_keyUrl) ?? defaultUrl;
+    return url.trim().replaceAll(' ', '');
   }
 
   /// 取得 Supabase Anon Key
   static Future<String?> getAnonKey() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyAnonKey);
+    return (prefs.getString(_keyAnonKey) ?? defaultAnonKey).trim();
   }
 
   /// 取得裝置唯一 ID（使用 flutter_udid）
@@ -91,7 +95,7 @@ class SupabaseConfig {
     final prefs = await SharedPreferences.getInstance();
     return {
       'url': prefs.getString(_keyUrl) ?? defaultUrl,
-      'anonKey': prefs.getString(_keyAnonKey) ?? '',
+      'anonKey': prefs.getString(_keyAnonKey) ?? defaultAnonKey,
       'userId': prefs.getString(_keyUserId) ?? '',
       'isConfigured': (prefs.getBool(_keyIsConfigured) ?? false).toString(),
     };

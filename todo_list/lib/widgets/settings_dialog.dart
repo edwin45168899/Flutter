@@ -19,6 +19,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   String _userId = '';
   bool _isLoading = false;
   bool _hasExistingConfig = false;
+  bool _obscureKey = true;
 
   @override
   void initState() {
@@ -106,6 +107,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      alignment: Alignment.topCenter,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 500),
@@ -191,9 +194,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
                         hintText: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
                         prefixIcon: const Icon(Icons.key),
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.visibility_off),
+                          icon: Icon(
+                            _obscureKey ? Icons.visibility_off : Icons.visibility,
+                          ),
                           onPressed: () {
-                            // 可加入顯示/隱藏功能
+                            setState(() => _obscureKey = !_obscureKey);
                           },
                         ),
                         border: OutlineInputBorder(
@@ -201,7 +206,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
                         ),
                         filled: true,
                       ),
-                      obscureText: true,
+                      obscureText: _obscureKey,
+                      obscuringCharacter: '*',
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return '請輸入 Anon Key';
@@ -299,8 +305,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
               // 按鈕區
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  if (_hasExistingConfig)
+                  if (_hasExistingConfig) ...[
                     TextButton.icon(
                       onPressed: _isLoading ? null : _clearConfig,
                       icon: const Icon(Icons.delete_outline),
@@ -309,7 +316,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
                         foregroundColor: Colors.red,
                       ),
                     ),
-                  const Spacer(),
+                    const SizedBox(width: 8),
+                  ],
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
                     child: const Text('取消'),
