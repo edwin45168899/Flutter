@@ -191,7 +191,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       controller: _keyController,
                       decoration: InputDecoration(
                         labelText: 'Supabase Anon Key',
-                        hintText: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                        hintText: '',
                         prefixIcon: const Icon(Icons.key),
                         suffixIcon: IconButton(
                           icon: Icon(
