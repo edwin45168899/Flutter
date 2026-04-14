@@ -538,9 +538,6 @@ void _showErrorSnackBar(BuildContext context, String error) {
   }
 
   ScaffoldMessenger.of(context).clearSnackBars();
-  
-  final double screenHeight = MediaQuery.of(context).size.height;
-  final double topPadding = MediaQuery.of(context).padding.top;
 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
@@ -580,7 +577,7 @@ void _showErrorSnackBar(BuildContext context, String error) {
           ),
           const SizedBox(height: 8),
           Text(
-            error.length > 150 ? '${error.substring(0, 150)}...' : error,
+            error.length > 200 ? '${error.substring(0, 200)}...' : error,
             style: TextStyle(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.9),
@@ -591,14 +588,10 @@ void _showErrorSnackBar(BuildContext context, String error) {
       ),
       backgroundColor: Theme.of(context).colorScheme.error,
       behavior: SnackBarBehavior.floating,
-      dismissDirection: DismissDirection.up,
+      dismissDirection: DismissDirection.horizontal,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20), // 高度變兩倍
-      margin: EdgeInsets.only(
-        bottom: screenHeight - topPadding - 180, // 推至頂部
-        left: 16,
-        right: 16,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       duration: const Duration(seconds: 6),
       action: SnackBarAction(
         label: '重試',
