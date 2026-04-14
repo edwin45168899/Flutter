@@ -214,3 +214,18 @@ flutter test test/widget_test.dart
 flutter upgrade --force
 ```
 
+### Android: 實機連網失敗 (`SocketException: Failed host lookup`)
+如果您發現 App 在模擬器顯示正常，但在**實機（或是編譯後的 APK）**中無法連網，通常是因為漏掉了 Android 的網路權限宣告。
+
+**解決方案：**
+開啟 `android/app/src/main/AndroidManifest.xml`，確保在 `<manifest>` 標籤內已包含 `INTERNET` 權限：
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ⚠️ 務必加入此行 ⚠️ -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    
+    <application ...>
+</manifest>
+```
+*註：Flutter 在 Debug 模式會自動附加此權限，但在 **Release 模式或安裝 APK** 時必須手動宣告，否則系統會禁止 App 連上網際網路。*
+

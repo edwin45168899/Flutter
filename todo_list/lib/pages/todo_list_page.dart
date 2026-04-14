@@ -513,26 +513,37 @@ class TodoSearchDelegate extends SearchDelegate {
 
 /// 顯示錯誤訊息 SnackBar
 void _showErrorSnackBar(BuildContext context, String error) {
-  // 分析錯誤類型
+  // 分析錯誤類型並清理訊息
   String title = '連線錯誤';
   IconData icon = Icons.error_outline;
   Color iconColor = Colors.white;
+  
+  // 清理訊息：移除冗長的 uri=... 內容，保留核心錯誤描述
+  String displayError = error;
+  if (displayError.contains(', uri=')) {
+    displayError = displayError.split(', uri=').first;
+  }
 
-  if (error.toLowerCase().contains('socketexception') || 
-      error.toLowerCase().contains('connection') ||
-      error.toLowerCase().contains('host lookup')) {
+  final lowerError = error.toLowerCase();
+  
+  if (lowerError.contains('host lookup')) {
+    title = '伺服器連線失敗';
+    icon = Icons.dns_rounded;
+  } else if (lowerError.contains('socketexception') || 
+             lowerError.contains('connection') ||
+             lowerError.contains('clientexception')) {
     title = '網路連線異常';
     icon = Icons.wifi_off_rounded;
-  } else if (error.contains('401') || error.contains('unauthorized') || error.contains('JWT')) {
+  } else if (lowerError.contains('401') || lowerError.contains('unauthorized') || lowerError.contains('jwt')) {
     title = '身分驗證過期';
     icon = Icons.lock_person_rounded;
-  } else if (error.contains('user_id 非法')) {
+  } else if (lowerError.contains('user_id 非法')) {
     title = '系統設定錯誤';
     icon = Icons.settings_suggest_rounded;
-  } else if (error.toLowerCase().contains('postgrest') || error.contains('database')) {
+  } else if (lowerError.contains('postgrest') || lowerError.contains('database')) {
     title = '資料存取失敗';
     icon = Icons.storage_rounded;
-  } else if (error.toLowerCase().contains('timeout')) {
+  } else if (lowerError.contains('timeout')) {
     title = '連線逾時';
     icon = Icons.timer_off_rounded;
   }
@@ -558,13 +569,14 @@ void _showErrorSnackBar(BuildContext context, String error) {
                   icon: const Icon(Icons.copy_all_rounded, color: Colors.white, size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  tooltip: '複製錯誤訊息',
+                  tooltip: '複製完整錯誤',
                   onPressed: () async {
+                    // 複製按鈕依然複製原始最完整的錯誤資訊
                     await Clipboard.setData(ClipboardData(text: error));
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('已複製錯誤訊息至剪貼簿'),
+                          content: Text('已複製完整錯誤訊息至剪貼簿'),
                           duration: Duration(seconds: 1),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -577,7 +589,7 @@ void _showErrorSnackBar(BuildContext context, String error) {
           ),
           const SizedBox(height: 8),
           Text(
-            error.length > 200 ? '${error.substring(0, 200)}...' : error,
+            displayError.length > 200 ? '${displayError.substring(0, 200)}...' : displayError,
             style: TextStyle(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.9),
